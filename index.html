@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUXE Sweeps | The Netflix of Sweepstakes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        luxe: {
+                            primary: '#8a2be2',
+                            secondary: '#ff00ff',
+                            dark: '#0f0f1a',
+                            light: '#f8f9fa',
+                            glass: 'rgba(255, 255, 255, 0.08)',
+                        }
+                    },
+                    boxShadow: {
+                        'luxe': '0 8px 32px rgba(0, 0, 0, 0.3)',
+                        'luxe-sm': '0 4px 16px rgba(0, 0, 0, 0.2)',
+                        'neon': '0 0 10px rgba(138, 43, 226, 0.7), 0 0 20px rgba(255, 0, 255, 0.5)',
+                    },
+                    backdropBlur: {
+                        'xs': '2px',
+                        'sm': '4px',
+                        'md': '8px',
+                        'lg': '12px',
+                        'xl': '16px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f1a;
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(138, 43, 226, 0.4), 0 0 25px rgba(255, 0, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 5px rgba(138, 43, 226, 0.7), 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        
+        .search-input:focus {
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.7), 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        
+        .sticky-header {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        
+        .trending-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        .country-flag {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .offer-image {
+            transition: all 0.3s ease;
+        }
+        
+        .offer-card:hover .offer-image {
+            transform: scale(1.05);
+        }
+        
+        .dropdown-option:hover {
+            background: rgba(138, 43, 226, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Sticky Smart Header -->
+    <header class="sticky-header fixed top-0 left-0 right-0 z-50 bg-luxe-dark/80 border-b border-luxe-glass py-4 px-6">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center">
+                <h1 class="text-2xl font-bold neon-text">
+                    <span class="text-luxe-primary">LUXE</span>
+                    <span class="text-luxe-secondary">Sweeps</span>
+                </h1>
+                <span class="ml-2 text-xs bg-luxe-primary text-white px-2 py-1 rounded-full">VIP</span>
+            </div>
+            
+            <div class="flex-1 max-w-2xl">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Search offers by country, prize..." 
+                           class="w-full bg-luxe-glass border border-luxe-glass rounded-full py-2 pl-4 pr-10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-luxe-primary transition-all">
+                    <button class="absolute right-3 top-2 text-gray-400 hover:text-white">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="relative group">
+                    <button id="countryDropdownButton" class="flex items-center gap-2 bg-luxe-glass hover:bg-luxe-glass/70 px-3 py-2 rounded-lg transition-all">
+                        <img src="https://flagcdn.com/w20/us.png" alt="USA" class="w-5 h-5 rounded-sm country-flag">
+                        <span class="text-sm hidden md:inline">United States</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div id="countryDropdown" class="hidden absolute right-0 mt-2 w-48 bg-luxe-dark border border-luxe-glass rounded-lg shadow-luxe z-50 max-h-96 overflow-y-auto">
+                        <div class="p-2">
+                            <input type="text" placeholder="Search countries..." class="w-full bg-luxe-glass border border-luxe-glass rounded px-2 py-1 mb-2 text-sm text-white">
+                        </div>
+                        <div class="country-list">
+                            <!-- Countries will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="relative group">
+                    <button id="filterDropdownButton" class="flex items-center gap-2 bg-luxe-glass hover:bg-luxe-glass/70 px-3 py-2 rounded-lg transition-all">
+                        <i class="fas fa-filter"></i>
+                        <span class="text-sm hidden md:inline">Filters</span>
+                    </button>
+                    <div id="filterDropdown" class="hidden absolute right-0 mt-2 w-48 bg-luxe-dark border border-luxe-glass rounded-lg shadow-luxe z-50">
+                        <div class="p-3">
+                            <h3 class="text-xs uppercase text-gray-400 mb-2">Prize Type</h3>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox text-luxe-primary rounded" checked>
+                                    <span>All Prizes</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox text-luxe-primary rounded" checked>
+                                    <span>Cash</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox text-luxe-primary rounded" checked>
+                                    <span>Gift Cards</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox text-luxe-primary rounded" checked>
+                                    <span>Phones</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox text-luxe-primary rounded" checked>
+                                    <span>Travel</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div class="container mx-auto">
+            <!-- Hero Section -->
+            <section class="mb-12 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                    <span class="text-luxe-primary">Win Luxury</span> 
+                    <span class="text-luxe-secondary">Prizes</span> 
+                    <span class="text-white">Daily</span>
+                </h2>
+                <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                    The most exclusive sweepstakes platform with over 1,000+ prizes claimed every week. Your dream reward is just a click away.
+                </p>
+            </section>
+            
+    <a href="https://t.acrsmartcam.com/373499/6973?bo=2779,2778,2777,2776,2775&popUnder=true&aff_sub5=SF_006OG000004lmDN&aff_sub4=AT_0002"><img src="https://www.imglnkx.com/3500/300x2503-UK.gif" width="300" height="250" border="0" /></a>
+
+            <!-- Trending Offers -->
+            <section class="mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold flex items-center gap-2">
+                        <span class="w-2 h-6 bg-luxe-primary rounded-full"></span>
+                        🔥 Trending Now
+                    </h3>
+                    <div class="flex items-center gap-2 text-sm text-gray-400">
+                        <span>Updated: Just now</span>
+                        <i class="fas fa-sync-alt cursor-pointer hover:text-white"></i>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Trending offer cards will be populated by JavaScript -->
+                </div>
+            </section>
+            
+            <!-- All Offers -->
+            <section>
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold flex items-center gap-2">
+                        <span class="w-2 h-6 bg-luxe-secondary rounded-full"></span>
+                        All Available Offers
+                    </h3>
+                    <div class="text-sm text-gray-400">
+                        <span id="offerCount">Loading...</span> offers available
+                    </div>
+                </div>
+                
+                <div id="offersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Offer cards will be populated by JavaScript -->
+                </div>
+                
+                <div id="noOffersMessage" class="hidden text-center py-12">
+                    <div class="max-w-md mx-auto">
+                        <i class="fas fa-globe-americas text-5xl text-luxe-primary mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">No Offers available at your Region</h3>
+                        <p class="text-gray-400 mb-6">But hold on—we're coming soon. Sign up to get notified when we launch in your country.</p>
+                        <button class="bg-gradient-to-r from-luxe-primary to-luxe-secondary text-white px-6 py-2 rounded-full hover:shadow-neon transition-all">
+                            Notify Me
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-10">
+                    <button id="loadMoreBtn" class="bg-luxe-glass hover:bg-luxe-glass/70 border border-luxe-glass px-6 py-2 rounded-full transition-all">
+                        Load More Offers
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Email Opt-in Modal -->
+    <div id="emailModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-luxe-dark border border-luxe-glass rounded-xl max-w-md w-full p-6 shadow-luxe">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">Get Exclusive Access</h3>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-300 mb-6">Enter your email to unlock VIP sweepstakes and get notified about new offers first.</p>
+            <form class="space-y-4">
+                <div>
+                    <input type="email" placeholder="Your best email" class="w-full bg-luxe-glass border border-luxe-glass rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-luxe-primary">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-luxe-primary to-luxe-secondary text-white py-3 rounded-lg font-medium hover:shadow-neon transition-all">
+                    Unlock Offers
+                </button>
+                <p class="text-xs text-gray-500 text-center">By continuing, you agree to our Terms and Privacy Policy</p>
+            </form>
+        </div>
+    </div>
+
+    <a href="https://t.mbsrv2.com/373499/7529?popUnder=true&aff_sub5=SF_006OG000004lmDN&aff_sub4=AT_0002"><img src="https://www.imglnkx.com/9138/unnamed2.gif" width="300" height="250" border="0" /></a>
+
+    <a href="https://t.mbsrv2.com/373499/9768/38141?file_id=628236&aff_sub5=SF_006OG000004lmDN&aff_sub4=AT_0002"><img src="https://www.imglnkx.com/9768/sextpanther_blackbg_300250.jpg" width="300" height="250" border="0" /></a>
+
+
+
+
+
+
+        <div class="flex flex-wrap items-center justify-center gap-4 mt-8 bg-white/5 p-4 rounded-lg shadow-lg backdrop-blur-md">
+  <!-- Payment Platforms -->
+  <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" class="h-8">
+  <img src="https://vectorseek.com/wp-content/uploads/2023/09/Payoneer-New-2021-Logo-Vector.svg-.png" alt="Payoneer" class="h-8">
+  <img src="http://1000logos.net/wp-content/uploads/2016/11/Chase-logo.png" alt="Chase Bank" class="h-8">
+  <img src="https://tse4.mm.bing.net/th?id=OIP.slz4tK-Qvb78tjQrPKKqXwHaEK&pid=Api&P=0&h=220" alt="Wells Fargo" class="h-8">
+  <img src="https://tse4.mm.bing.net/th?id=OIP.Ir_GDvoitoOMlqSLVzKMmwHaBr&pid=Api&P=0&h=220" alt="Wise" class="h-8">
+
+  <!-- Country Flags -->
+  <img src="https://tse1.mm.bing.net/th?id=OIP.KZFYRRzutNf0T5fINPwdMAHaHa&pid=Api&P=0&h=220" alt="AU Flag" class="h-6">
+  <img src="https://tse4.mm.bing.net/th?id=OIP.KWgdAmYNgGUltmqPeAPd_QHaEl&pid=Api&P=0&h=220" alt="US Flag" class="h-6">
+  <img src="https://tse4.mm.bing.net/th?id=OIP.6-EKuejpZWzV6gx8xagyDwAAAA&pid=Api&P=0&h=220" alt="Algeria Flag" class="h-6">
+
+  <!-- Online Banks -->
+  <img src="https://tse3.mm.bing.net/th?id=OIP.23orcCx02C6WkrIUzQbD8gHaCi&pid=Api&P=0&h=220" alt="Skrill" class="h-8">
+  <img src="https://tse3.mm.bing.net/th?id=OIP.TBjNuCteZP835ZPw1GitGAHaEK&pid=Api&P=0&h=220" alt="Cash App" class="h-8">
+</div>
+
+
+
+    <script>
+        // Sample offer data (in a real app, this would come from an API)
+        const offers = [
+            {
+                id: 1,
+                title: " Registra un account SisalFunClub",
+                prize: "Join now and enjoy games worth $500",
+                value: "$500 - $ 1,310",
+                type: "Phones",
+                country: "IT",
+                image: "https://www.cpagrip.com/admin/media/offers/f4d2dacd1bce03aa1457f8987bff2898.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=69067",
+                trending: true,
+                timeLeft: "2 days left"
+            },
+            {
+                id: 2,
+                title: "नवीनतम सैमसंग गैलेक्सी S25 प्राप्त करें",
+                prize: "Samsung S25",
+                value: "$1,000",
+                type: "Cash",
+                country: "IN",
+                image: "https://www.cpagrip.com/admin/media/offers/770a0fe058b51ebd8fc50537e8bd3dba.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=70070",
+                trending: true,
+                timeLeft: "27 hrs left"
+            },
+            {
+                id: 3,
+                title: "लुमोस ऐप इंस्टॉल करें और अपना परीक्षण शुरू करें!",
+                prize: "Free VPN with 100% Anonimity",
+                value: "$50",
+                type: "Gift Cards",
+                country: "IN",
+                image: "https://www.cpagrip.com/admin/media/offers/a17542f2694bf8cab40792e2aebdb2d7.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=63336",
+                trending: false,
+                timeLeft: "3 days left"
+            },
+            {
+                id: 4,
+                title: "Responde encuestas con Surveoo",
+                prize: "Earn monet by joining the program",
+                value: "$600/week",
+                type: "Tech",
+                country: "MX",
+                image: "https://www.cpagrip.com/admin/media/offers/cf776baf09c6a29a96c8984601b0b111.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=67902",
+                trending: true,
+                timeLeft: "5 days left"
+            },
+            {
+                id: 5,
+                title: " Você pode obter um Sony PlayStation 5 agora",
+                prize: "PS5",
+                value: "$750",
+                type: "Gaming",
+                country: "BR",
+                image: "https://www.cpagrip.com/admin/media/offers/002cd281a5deb53be1249311494d2499.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=65312",
+                trending: false,
+                timeLeft: "1 week left"
+            },
+            {
+                id: 6,
+                title: " Participe e concorra a um Samsung Galaxy S25",
+                prize: "Samsung S25",
+                value: "$1,450",
+                type: "phones",
+                country: "BR",
+                image: "https://www.cpagrip.com/admin/media/offers/cceef456243a45f0f86b75b756849374.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=70077",
+                trending: true,
+                timeLeft: "2 hrs left"
+            },
+            {
+                id: 7,
+                title: "Woman Underwear Trial",
+                prize: "Get up to 20 packs of under wear",
+                value: "$700",
+                type: "Gift Cards",
+                country: "UK",
+                image: "https://www.cpagrip.com/admin/media/offers/545b28bed7ebfa2fcd858f32503bbfac.png",
+                trending: false,
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=70100",
+                timeLeft: "1 day left"
+            },
+            {
+                id: 8,
+                title: "Start your ON THAT ASS Trial Now!",
+                prize: "get a massive 80% discount under wear",
+                value: "80% under wear discount",
+                type: "cash",
+                country: "UK",
+                image: "https://www.cpagrip.com/admin/media/offers/4fa06eef1b1edbcb90cc5347a2e63351.png",
+                link: "https://singingfiles.com/show.php?l=0&u=2306688&id=68728",
+                trending: false,
+                timeLeft: "1 week left"
+            },
+            {
+    "title": "$ Enter for your Samsung A55!",
+    "prize": "Free samsung S25 Gift",
+    "value": "$1,000",
+    "country": "PH",
+    "type": "Gift Cards",
+    "image": "https://www.cpagrip.com/admin/media/offers/09ceaaf9bb9c6db08b4ab992166e781b.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=67881",
+    "trending": true,
+    "timeLeft": "2 days left"
+  },
+  {
+    "title": "Chile Tech Bundle",
+    "prize": "Free product samples",
+    "value": "$2,200",
+    "country": "US",
+    "type": "Tech",
+    "image": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=68777",
+    "trending": false,
+    "timeLeft": "4hrs days left"
+  },
+  {
+    "title": "$750 Worth of products",
+    "prize": "Free Xaomi Products",
+    "value": "$750",
+    "country": "US",
+    "type": "Gift Cards",
+    "image": "https://bestxiaomiproducts.com/wp-content/uploads/2019/04/mi-mix-3.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=68776",
+    "trending": true,
+    "timeLeft": "Ends tonight"
+  },
+  {
+    "title": "Randomgive.net",
+    "prize": "PAypal giftcard",
+    "value": "$1,000",
+    "country": "CA",
+    "type": "Gift Cards",
+    "image": "https://www.cpagrip.com/admin/media/offers/d9322f5adc69d794519b7129dd71c0c4.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=69145",
+    "trending": false,
+    "timeLeft": "5 days left"
+  },
+  {
+    "title": "Android vasion giveaway",
+    "prize": "Win a samsung s25(you must use an android to enter)",
+    "value": "$1300",
+    "country": "CA",
+    "type": "Fashion",
+    "image": "https://www.cpagrip.com/admin/media/offers/e27b629159d70ddd4bf4bca7a28947da.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=68935",
+    "trending": true,
+    "timeLeft": "48 hours left"
+  },
+  {
+    "title": "Free petrol coupon",
+    "prize": "$500 worth of petrol",
+    "value": "$2,000",
+    "country": "SG",
+    "type": "Crypto",
+    "image": "https://www.cpagrip.com/admin/media/offers/1c8412bf20b0869bba9046dce7c46fd2.png",
+    "link": "https://optilinklock.com/show.php?l=0&u=2306688&id=66573",
+    "trending": true,
+    "timeLeft": "1 day left"
+  },
+  {
+    "title": "Enter for a chance at a $500 7 Eleven Gift Card!",
+    "prize": "$500 giftcard",
+    "value": "$500(twice)",
+    "country": "CA",
+    "type": "Cash",
+    "image": "https://www.cpagrip.com/admin/media/offers/1f8a6db844cd53b239d4522914dbe4b8.png",
+    "link": "https://optilinklock.com/show.php?l=0&u=2306688&id=69339",
+    "trending": false,
+    "timeLeft": "3 days left"
+  },
+  {
+    "title": "Gamer's Paradise Pack",
+    "prize": "Playstation for free",
+    "value": "$800",
+    "country": "CA",
+    "type": "Gaming",
+    "image": "https://www.cpagrip.com/admin/media/offers/0d2693de2d49ba9491964b88f26e9b36.png",
+    "link": "https://optilinklock.com/show.php?l=0&u=2306688&id=68846",
+    "trending": true,
+    "timeLeft": "4 days left"
+  },
+  {
+    "title": " Testen Sie jetzt Ihre Damenunterwäsche!",
+    "prize": "Geben Sie jetzt Ihre Kreditkartendaten ein, um loszulegen",
+    "value": "$300",
+    "country": "DE",
+    "type": "Cash",
+    "image": "https://www.cpagrip.com/admin/media/offers/b2f815329adf6c5306bcb34f622e96f9.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=70106",
+    "trending": true,
+    "timeLeft": "Ends in 2 days"
+  },
+  {
+    "title": "Free crypto Coins on install",
+    "prize": "$1,000 Worth solana",
+    "value": "$1,000",
+    "country": "DE",
+    "type": "Gift Cards",
+    "image": "https://www.cpagrip.com/admin/media/offers/4ebf9dad2263529b59540f4ccbc4413c.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=69074",
+    "trending": false,
+    "timeLeft": "7 days left"
+  },
+  {
+    "title": "iPad Pro 12.9” Giveaway Obtenez une récompense après cette enquête !",
+    "prize": "Enjoy up to $300",
+    "value": "$300",
+    "country": "FR",
+    "type": "Tech",
+    "image": "https://www.cpagrip.com/admin/media/offers/7520259176ef60c219a4237493c986ac.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=59613",
+    "trending": true,
+    "timeLeft": "6 days left"
+  },
+  {
+    "title": " Découvrez le contenu de votre Cadeau Mystère dès maintenant !",
+    "prize": "Suprise Gifts",
+    "value": "$1,000",
+    "country": "FR",
+    "type": "Gift Cards",
+    "image": "https://www.cpagrip.com/admin/media/offers/1a78ff87f558389a7522f794512ebbf6.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=69379",
+    "trending": false,
+    "timeLeft": "3 days left"
+  },
+  {
+    "title": "Get Your iPhone 15 Pro Now!",
+    "prize": "Enter your credit card information to get started.",
+    "value": "$1000",
+    "country": "ZA",
+    "type": "Phones",
+    "image": "https://www.cpagrip.com/admin/media/offers/e65437ceb534b1c8c9ee08e4fa7ccd9c.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=64332",
+    "trending": true,
+    "timeLeft": "Ends in 12 hours"
+  },
+  {
+    "title": " Become A Millionaire!",
+    "prize": "Get a shot at $500",
+    "value": "$500",
+    "country": "ZA",
+    "type": "cash",
+    "image": "https://www.cpagrip.com/admin/media/offers/70e6c31ed4284f2057c940d9598e71ec.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=54748",
+    "trending": true,
+    "timeLeft": "1 hr left"
+  },
+  {
+    "title": "See if you Need Your Data Protected!",
+    "prize": "Free antivirus and VPN pro plan",
+    "value": "$50",
+    "country": "ZA",
+    "type": "Tech",
+    "image": "https://www.cpagrip.com/admin/media/offers/p1fuaiur5k1vrk19691vaq13qhgou3.png",
+    "link": "https://singingfiles.com/show.php?l=0&u=2306688&id=63432",
+    "trending": true,
+    "timeLeft": "19 hours left"
+  }
+            
+        ];
+
+        // Countries data
+        const countries = [
+            { code: 'US', name: 'United States' },
+            { code: 'UK', name: 'United Kingdom' },
+            { code: 'CA', name: 'Canada' },
+            { code: 'AU', name: 'Australia' },
+            { code: 'DE', name: 'Germany' },
+            { code: 'FR', name: 'France' },
+            { code: 'IT', name: 'Italy' },
+            { code: 'ES', name: 'Spain' },
+            { code: 'JP', name: 'Japan' },
+            { code: 'BR', name: 'Brazil' },
+            { code: 'IN', name: 'India' },
+            { code: 'MX', name: 'Mexico' },
+            { code: 'NL', name: 'Netherlands' },
+            { code: 'SE', name: 'Sweden' },
+            { code: 'SG', name: 'Singapore' },
+            { code: 'ZA', name: 'South Africa' }
+        ];
+
+        // DOM elements
+        const offersGrid = document.getElementById('offersGrid');
+        const countryDropdownButton = document.getElementById('countryDropdownButton');
+        const countryDropdown = document.getElementById('countryDropdown');
+        const countryList = countryDropdown.querySelector('.country-list');
+        const filterDropdownButton = document.getElementById('filterDropdownButton');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const searchInput = document.getElementById('searchInput');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        const offerCount = document.getElementById('offerCount');
+        const noOffersMessage = document.getElementById('noOffersMessage');
+        const emailModal = document.getElementById('emailModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const trendingOffersSection = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-3.xl\\:grid-cols-4.gap-6');
+
+        // Current filters
+        let currentCountry = 'all';
+        let currentSearch = '';
+        let currentType = 'all';
+        let visibleOffers = 8;
+
+        // Initialize the page
+        function init() {
+            populateCountries();
+            renderOffers();
+            renderTrendingOffers();
+            
+            // Set initial offer count
+            updateOfferCount();
+            
+            // Auto-detect country (simulated)
+            setTimeout(() => {
+                // In a real app, you would use an IP detection service
+                console.log('Auto-detected country: US');
+            }, 1000);
+        }
+
+        // Populate country dropdown
+        function populateCountries() {
+            countryList.innerHTML = '';
+            
+            
+            // Add 'All Countries' option
+            const allOption = document.createElement('div');
+            allOption.className = `dropdown-option flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-luxe-primary/10 ${currentCountry === 'all' ? 'bg-luxe-primary/20' : ''}`;
+            allOption.innerHTML = `
+                <i class="fas fa-globe-americas text-white text-sm"></i>
+                <span class="text-sm">All Countries</span>
+                ${currentCountry === 'all' ? '<i class="fas fa-check ml-auto text-luxe-primary"></i>' : ''}
+            `;
+            allOption.addEventListener('click', () => {
+                currentCountry = 'all';
+                document.querySelector('.country-flag').src = "https://flagcdn.com/w20/us.png";
+                document.querySelector('.country-flag').alt = "All";
+                countryDropdownButton.querySelector('span').textContent = "All Countries";
+                countryDropdown.classList.add('hidden');
+                renderOffers();
+                updateOfferCount();
+            });
+            countryList.appendChild(allOption);
+
+countries.forEach(country => {
+                const countryItem = document.createElement('div');
+                countryItem.className = `dropdown-option flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-luxe-primary/10 ${country.code === currentCountry ? 'bg-luxe-primary/20' : ''}`;
+                countryItem.innerHTML = `
+                    <img src="https://flagcdn.com/w20/${country.code.toLowerCase()}.png" alt="${country.name}" class="w-5 h-5 rounded-sm">
+                    <span class="text-sm">${country.name}</span>
+                    ${country.code === currentCountry ? '<i class="fas fa-check ml-auto text-luxe-primary"></i>' : ''}
+                `;
+                countryItem.addEventListener('click', () => {
+                    currentCountry = country.code;
+                    document.querySelector('.country-flag').src = `https://flagcdn.com/w20/${country.code.toLowerCase()}.png`;
+                    document.querySelector('.country-flag').alt = country.name;
+                    countryDropdownButton.querySelector('span').textContent = country.name;
+                    countryDropdown.classList.add('hidden');
+                    renderOffers();
+                    updateOfferCount();
+                });
+                countryList.appendChild(countryItem);
+            });
+        }
+
+        // Render offers based on filters
+        function renderOffers() {
+            offersGrid.innerHTML = '';
+            
+            const filteredOffers = offers.filter(offer => {
+                const matchesCountry = currentCountry === 'all' || offer.country === currentCountry;
+                const matchesSearch = offer.title.toLowerCase().includes(currentSearch.toLowerCase()) || 
+                                     offer.prize.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                                     offer.type.toLowerCase().includes(currentSearch.toLowerCase());
+                const matchesType = currentType === 'all' || offer.type === currentType;
+                
+                return matchesCountry && matchesSearch && matchesType;
+            });
+            
+            if (filteredOffers.length === 0) {
+                noOffersMessage.classList.remove('hidden');
+                offersGrid.classList.add('hidden');
+            } else {
+                noOffersMessage.classList.add('hidden');
+                offersGrid.classList.remove('hidden');
+                
+                filteredOffers.slice(0, visibleOffers).forEach(offer => {
+                    const offerCard = createOfferCard(offer);
+                    offersGrid.appendChild(offerCard);
+                });
+            }
+            
+            // Show/hide load more button
+            if (filteredOffers.length <= visibleOffers) {
+                loadMoreBtn.classList.add('hidden');
+            } else {
+                loadMoreBtn.classList.remove('hidden');
+            }
+        }
+
+        // Render trending offers
+        function renderTrendingOffers() {
+            trendingOffersSection.innerHTML = '';
+            
+            const trendingOffers = offers.filter(offer => offer.trending && offer.country === currentCountry).slice(0, 4);
+            
+            if (trendingOffers.length === 0) {
+                trendingOffersSection.parentElement.classList.add('hidden');
+            } else {
+                trendingOffersSection.parentElement.classList.remove('hidden');
+                
+                trendingOffers.forEach(offer => {
+                    const offerCard = createOfferCard(offer, true);
+                    trendingOffersSection.appendChild(offerCard);
+                });
+            }
+        }
+
+        // Create an offer card element
+        function createOfferCard(offer, isTrending = false) {
+            const offerCard = document.createElement('div');
+            offerCard.className = `offer-card glass-card rounded-xl overflow-hidden shadow-luxe-sm hover:shadow-luxe transition-all ${isTrending ? 'border border-luxe-primary/30' : ''}`;
+            
+            offerCard.innerHTML = `
+                <div class="relative">
+                    <img src="${offer.image}" alt="${offer.prize}" class="offer-image w-full h-48 object-cover">
+                    ${offer.trending ? '<span class="trending-badge absolute top-2 left-2 bg-luxe-primary text-white text-xs px-2 py-1 rounded-full">🔥 Trending</span>' : ''}
+                    ${offer.timeLeft ? `<span class="absolute top-2 right-2 bg-luxe-dark/90 text-white text-xs px-2 py-1 rounded-full">${offer.timeLeft}</span>` : ''}
+                </div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between mb-2">
+                        <h3 class="font-semibold text-lg">${offer.title}</h3>
+                        <img src="https://flagcdn.com/w20/${offer.country.toLowerCase()}.png" alt="${offer.country}" class="w-5 h-5 rounded-sm country-flag mt-1">
+                        <span class="text-gray-300 text-sm mb-3"> ${offer.country}</span>
+                    </div>
+                    <p class="text-gray-300 text-sm mb-3">${offer.prize}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-luxe-primary font-medium">${offer.value}</span>
+                        <button class="claim-btn bg-gradient-to-r from-luxe-primary to-luxe-secondary text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-neon transition-all">
+                            Claim Now
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Add click event to claim button
+            const claimBtn = offerCard.querySelector('.claim-btn');
+            claimBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.open(offer.link, '_blank');
+            });
+            
+            return offerCard;
+        }
+
+        // Update offer count display
+        function updateOfferCount() {
+            const filteredOffers = currentCountry === 'all' ? offers : offers.filter(offer => offer.country === currentCountry);
+            offerCount.textContent = filteredOffers.length;
+        }
+
+        // Show email opt-in modal
+        function showEmailModal(offer) {
+            emailModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close email modal
+        function closeEmailModal() {
+            emailModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Event listeners
+        countryDropdownButton.addEventListener('click', () => {
+            countryDropdown.classList.toggle('hidden');
+            filterDropdown.classList.add('hidden');
+        });
+
+        filterDropdownButton.addEventListener('click', () => {
+            filterDropdown.classList.toggle('hidden');
+            countryDropdown.classList.add('hidden');
+        });
+
+        searchInput.addEventListener('input', () => {
+            currentSearch = searchInput.value;
+            renderOffers();
+        });
+
+        loadMoreBtn.addEventListener('click', () => {
+            visibleOffers += 8;
+            renderOffers();
+        });
+
+        closeModalBtn.addEventListener('click', closeEmailModal);
+
+        emailModal.addEventListener('click', (e) => {
+            if (e.target === emailModal) {
+                closeEmailModal();
+            }
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!countryDropdownButton.contains(e.target) && !countryDropdown.contains(e.target)) {
+                countryDropdown.classList.add('hidden');
+            }
+            
+            if (!filterDropdownButton.contains(e.target) && !filterDropdown.contains(e.target)) {
+                filterDropdown.classList.add('hidden');
+            }
+        });
+
+        // Initialize the page
+        init();
+    </script>
+
+
+<!-- 💎 CrackRevenue Pop-Up Container -->
+<div id="crackPopup" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-luxe-dark border border-luxe-glass rounded-xl max-w-sm w-full p-6 text-white shadow-luxe relative">
+    <button id="closeCrackPopup" class="absolute top-2 right-2 text-white text-xl">&times;</button>
+    <h2 id="crackAdTitle" class="text-2xl font-bold text-luxe-primary mb-2"></h2>
+    <p id="crackAdDesc" class="text-sm text-gray-300 mb-4"></p>
+    <img id="crackAdImage" src="" class="w-full h-40 object-cover rounded mb-4" alt="NSFW Ad">
+    <a id="crackAdLink" href="#" target="_blank" class="block text-center bg-gradient-to-r from-luxe-primary to-luxe-secondary text-white py-3 rounded-lg font-semibold hover:shadow-neon transition-all">
+      🔥 Claim Offer
+    </a>
+  </div>
+</div>
+
+<script>
+const crackAds = [
+  {
+    title: "NSFW AI Chat – 🇺🇸 Exclusive",
+    desc: "Talk dirty to AI girlfriends right now.",
+    img: "https://www.imglnkx.com/10046/GPTGirlfriend_20250320_300250-type3-GothStory_1.gif",
+    link: "https://t.mbsrv2.com/373499/10046/38043?aff_sub5=SF_006OG000004lmDN",
+    country: "US"
+  },
+  {
+    title: "18+ Girls In Your Area 🇬🇧",
+    desc: "Click to enter uncensored chat. Free now.",
+    img: "https://gateway-v2.crakrevenue.com/crakrevenue-screenshot-collector/2.0/desktop/7908/27196.jpg",
+    link: "https://t.ancdu.link/373499/7908/27196?bo=2753,2754,2755,2756&po=6456&aff_sub5=SF_006OG000004lmDN",
+    country: "UK"
+  },
+  {
+    title: "Instant Pleasure – No Signup 🇨🇦",
+    desc: "Chat, flirt, and play with AI characters.",
+    img: "https://bucket.aicloudnetservices.com/generated_images_v2/public/2024-10-06/ABAhw1DZ84hdxA1bjHcqJzqe4NG3/qF0jDUfPs6zZYbeUwX6s?Expires=4881801186&GoogleAccessId=firebase-adminsdk-jjn1g%40promptchan-fe814.iam.gserviceaccount.com&Signature=eZoazYE%2Bs1Cpstz%2BPmyvJEHDYleozJ9R5cgAN%2B7XwDeyA5linNWlf37NTU9Bam7rqW5NsSmHB1Q5XYGiHZPO8nTi22dfjPAD4rcRempqd9RWcN5WDW7HJy5l8u3%2Ftl6xVzxaxX42sAditvIiXx3qEsGC%2FPSjmAzc1zN8GnjhIuqK1bmLoBEJWw5XBA1fw%2F3Vl5UdAxUL0wC44DlzsxlScrvlQ19O0ZNVrVNqcH3G1vLPbfx2gWWhqJT%2F4DgxrQ9iNM2ycvcQP8msKJxaAw666GMZnRvg%2Fp2hW5TsjpOYAnO9FqA079vySISfyxzxowyJcazUO5BBTutOvhoc9YjG5A%3D%3D",
+    link: "https://t.ancdu.link/373499/4299/37955?bo=2753,2754,2755,2756&po=6456&aff_sub5=SF_006OG000004lmDN",
+    country: "CA"
+  },
+  {
+    title: "All Access NSFW 🔥",
+    desc: "Enter your private room. 100% Free.",
+    img: "https://b.pleasur.ai/vault/L22w5haG/KtMWF6bMpmnBlpUw3exjEx4Ml2M/14QTyQ../file-de23cf.webp",
+    link: "https://t.mbsrv2.com/373499/9989/0?aff_sub5=SF_006OG000004lmDN",
+    country: "ALL"
+  }
+];
+
+let userCountry = "ALL";
+
+// Fetch user's country
+fetch("https://ipinfo.io/json?token=d02ef304c644ca")
+  .then(res => res.json())
+  .then(data => {
+    userCountry = data.country || "ALL";
+    showRandomAd();
+
+setInterval(() => {
+  showRandomAd();
+}, 17000);
+
+    setInterval(showRandomAd, Math.floor(Math.random() * (300000 - 120000) + 120000)); // 2–5 min
+  });
+
+function showRandomAd() {
+  const eligibleAds = crackAds.filter(ad => ad.country === userCountry || ad.country === "ALL");
+  if (eligibleAds.length === 0) return;
+
+  const ad = eligibleAds[Math.floor(Math.random() * eligibleAds.length)];
+
+  document.getElementById('crackAdTitle').textContent = ad.title;
+  document.getElementById('crackAdDesc').textContent = ad.desc;
+  document.getElementById('crackAdImage').src = ad.img;
+  document.getElementById('crackAdLink').href = ad.link;
+  document.getElementById('crackPopup').classList.remove('hidden');
+
+  // Click tracking pixel
+  document.getElementById('crackAdLink').onclick = function () {
+    const pixel = document.createElement('img');
+    pixel.src = "https://your-tracker.com/pixel.png";
+    pixel.style.display = "none";
+    document.body.appendChild(pixel);
+  };
+}
+
+// Close popup
+document.getElementById('closeCrackPopup').addEventListener('click', () => {
+  document.getElementById('crackPopup').classList.add('hidden');
+});
+</script>
+
+
+</body>
+</html>
