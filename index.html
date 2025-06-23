@@ -816,7 +816,6 @@ countries.forEach(country => {
 
         // Initialize the page
         init();
-        
     </script>
 
 
@@ -865,20 +864,30 @@ const crackAds = [
   }
 ];
 
+
 let userCountry = "ALL";
 
-// Fetch user's country
+const popupIntervals = {
+  US: 17000,
+  UK: 25000,
+  CA: 20000,
+  DE: 30000,
+  ALL: 60000
+};
+
+// Fetch user's country and set popup timer accordingly
 fetch("https://ipinfo.io/json?token=d02ef304c644ca")
   .then(res => res.json())
   .then(data => {
     userCountry = data.country || "ALL";
     showRandomAd();
 
-setInterval(() => {
-  showRandomAd();
-}, 17000);
-
-    setInterval(showRandomAd, Math.floor(Math.random() * (300000 - 120000) + 120000)); // 2–5 min
+    const delay = popupIntervals[userCountry] || popupIntervals["ALL"];
+    setInterval(() => {
+      showRandomAd();
+    }, delay);
+  });
+ // 2–5 min
   });
 
 function showRandomAd() {
